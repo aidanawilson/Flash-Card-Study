@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Biology 191 Study</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="course-header">
+    <div class="header-left">
+      <a class="back-link" href="../">← Courses</a>
+      <h1>Biology 191</h1>
+    </div>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light and dark mode">
+      <span aria-hidden="true">◐</span>
+      <span id="themeLabel">Dark</span>
+    </button>
+  </header>
+
+  <main class="app-shell">
+    <nav class="mode-switch" aria-label="Study mode">
+      <button class="mode-button active" data-mode="flashcards" type="button">Flashcards</button>
+      <button class="mode-button" data-mode="test" type="button">Test Mode</button>
+    </nav>
+
+    <section class="panel toolbar" id="filterPanel">
+      <div class="field">
+        <label for="examFilter">Exam</label>
+        <select id="examFilter"></select>
+      </div>
+      <div class="field">
+        <label for="chapterFilter">Chapter</label>
+        <select id="chapterFilter"></select>
+      </div>
+      <div class="field flash-only">
+        <label for="categoryFilter">Type</label>
+        <select id="categoryFilter"></select>
+      </div>
+      <div class="field search-field flash-only">
+        <label for="searchBox">Search</label>
+        <input id="searchBox" type="search" placeholder="Search cards">
+      </div>
+      <div class="toggle-row">
+        <button class="toggle-button" id="shuffleBtn" type="button" aria-pressed="false">Shuffle</button>
+        <button class="toggle-button flash-only" id="unmasteredBtn" type="button" aria-pressed="false">Only unmastered</button>
+        <button class="ghost-button flash-only" id="resetBtn" type="button">Reset progress</button>
+        <button class="ghost-button test-only hidden" id="restartTestBtn" type="button">Restart test</button>
+      </div>
+    </section>
+
+    <section id="flashcardMode">
+      <div class="progress-row">
+        <div class="progress-track"><div class="progress-bar" id="cardProgress"></div></div>
+        <div class="progress-meta"><span id="cardPosition">0 / 0</span><span id="masteredSummary">0 mastered</span></div>
+      </div>
+
+      <div class="flash-stage" id="flashStage">
+        <button class="flashcard" id="flashcard" type="button" aria-label="Flip flashcard">
+          <div class="face front-face">
+            <div class="badges" id="frontBadges"></div>
+            <div class="front-copy" id="frontText"></div>
+            <div class="flip-hint">Click card or press Space</div>
+          </div>
+          <div class="face back-face">
+            <div class="badges" id="backBadges"></div>
+            <div class="back-copy" id="backContent"></div>
+            <div class="source-line" id="sourceLine"></div>
+          </div>
+        </button>
+      </div>
+
+      <div class="empty-state hidden" id="cardEmpty">No flashcards match these filters.</div>
+
+      <div class="card-controls">
+        <button id="prevBtn" type="button">← Previous</button>
+        <button id="masterBtn" class="primary-button" type="button">Mark mastered</button>
+        <button id="nextBtn" type="button">Next →</button>
+      </div>
+      <div class="keyboard-help">←/→ navigate · Space flip · M mastered · S shuffle</div>
+    </section>
+
+    <section id="testMode" class="hidden">
+      <div class="test-topline">
+        <div>
+          <div class="test-count" id="testPosition">Question 0 / 0</div>
+          <div class="test-score" id="testScore">Score 0 / 0</div>
+        </div>
+        <div class="test-pool-note">1 close + 1 medium + 1 clear distractor each attempt</div>
+      </div>
+
+      <article class="test-card" id="testCard">
+        <div class="badges" id="testBadges"></div>
+        <h2 id="testPrompt"></h2>
+        <div class="option-list" id="optionList"></div>
+        <div class="feedback hidden" id="feedback"></div>
+        <div class="test-actions">
+          <button id="nextTestBtn" class="primary-button" type="button" disabled>Next question →</button>
+        </div>
+      </article>
+
+      <div class="empty-state hidden" id="testEmpty">No test questions match this chapter.</div>
+      <div class="keyboard-help">A–D or 1–4 answer · Enter next</div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop hidden" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+    <div class="modal">
+      <h2 id="resetTitle">Reset progress?</h2>
+      <p>This will clear every Biology 191 card you marked as mastered.</p>
+      <div class="modal-actions">
+        <button id="cancelReset" type="button">Cancel</button>
+        <button id="confirmReset" class="danger-button" type="button">Reset progress</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
