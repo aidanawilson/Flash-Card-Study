@@ -160,18 +160,16 @@ function restartTest(){
   state.testIndex=0; state.testCorrect=0; state.testAnswered=0;
   renderTestQuestion();
 }
-function chooseTier(pool){
-  return pool[Math.floor(Math.random()*pool.length)];
-}
 function makeOptions(q){
-  const d1=chooseTier(q.distractors.close);
-  const d2=chooseTier(q.distractors.medium);
-  const d3=chooseTier(q.distractors.clear);
+  const wrongPool=[
+    ...q.distractors.close.map(x=>({...x,tier:"close"})),
+    ...q.distractors.medium.map(x=>({...x,tier:"medium"})),
+    ...q.distractors.clear.map(x=>({...x,tier:"clear"}))
+  ];
+  const selectedWrong=shuffleCopy(wrongPool).slice(0,3);
   return shuffleCopy([
     {text:q.correct,correct:true,why:q.correctWhy,tier:"correct"},
-    {text:d1.text,correct:false,why:d1.whyWrong,tier:"close"},
-    {text:d2.text,correct:false,why:d2.whyWrong,tier:"medium"},
-    {text:d3.text,correct:false,why:d3.whyWrong,tier:"clear"}
+    ...selectedWrong.map(x=>({text:x.text,correct:false,why:x.whyWrong,tier:x.tier}))
   ]);
 }
 function renderTestQuestion(){
@@ -218,13 +216,16 @@ function answerTest(index){
   fb.classList.remove("hidden");
   if(selected.correct){
     fb.classList.add("good");
-    fb.innerHTML=`<b>Correct.</b><div style="margin-top:8px">${escapeHtml(q.correct)}</div>`;
+    fb.innerHTML=`
+      <b>Correct.</b>
+      <div style="margin-top:8px"><b>Why:</b> ${escapeHtml(q.correctWhy || q.correct)}</div>
+    `;
   }else{
     fb.classList.add("bad");
     fb.innerHTML=`
       <b>Incorrect.</b>
-      <div style="margin-top:8px"><b>Why this choice misses:</b> ${escapeHtml(selected.why)}</div>
-      <div class="correct-box"><b>Correct answer</b><br>${escapeHtml(q.correct)}</div>
+      <div style="margin-top:8px"><b>Why this is wrong:</b> ${escapeHtml(selected.why)}</div>
+      <div class="correct-box"><b>What to know</b><br>${escapeHtml(q.correct)}</div>
     `;
   }
   $("testScore").textContent=`Score ${state.testCorrect} / ${state.testAnswered}`;
