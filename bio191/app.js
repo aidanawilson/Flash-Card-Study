@@ -1,6 +1,9 @@
 
 const THEME_KEY = "study-site:theme";
-const MASTER_KEY = "study-site:bio191:mastered";
+// Mastery is stored in browser localStorage, which survives normal site deployments.
+// v2 stores immutable semantic masteryKey values rather than array-position card IDs.
+const MASTER_KEY = "study-site:bio191:mastery:v2";
+const LEGACY_MASTER_KEY = "study-site:bio191:mastered";
 const PREF_KEY = "study-site:bio191:prefs";
 
 let manifest = null;
@@ -16,6 +19,7 @@ const state = {
   shuffle: false,
   onlyUnmastered: false,
   mastered: new Set(),
+  legacyMasteredIds: new Set(),
   cardDeck: [],
   cardIndex: 0,
   flipped: false,
@@ -54,11 +58,40 @@ function loadPrefs(){
     Object.assign(state,p);
   }catch(_){}
   try{
-    state.mastered=new Set(JSON.parse(localStorage.getItem(MASTER_KEY)||"[]"));
+    const saved=JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");
+    const keys=Array.isArray(saved)?saved:(saved.keys||[]);
+    state.mastered=new Set(keys);
   }catch(_){ state.mastered=new Set(); }
+  try{
+    state.legacyMasteredIds=new Set(JSON.parse(localStorage.getItem(LEGACY_MASTER_KEY)||"[]"));
+  }catch(_){ state.legacyMasteredIds=new Set(); }
+}
+function masteryKeyFor(card){
+  // masteryKey is intentionally stored in flashcards.json and should never be changed
+  // for an existing card, even when wording, ordering, or IDs change in future releases.
+  return card.masteryKey || card.id;
+}
+function migrateMastery(){
+  // Merge mastery saved by older releases that used volatile card IDs.
+  // This runs after flashcards.json loads so old IDs can be mapped once to stable keys.
+  let changed=false;
+  for(const c of cards){
+    if(state.legacyMasteredIds.has(c.id)){
+      const key=masteryKeyFor(c);
+      if(!state.mastered.has(key)){ state.mastered.add(key); changed=true; }
+    }
+  }
+  if(changed || state.legacyMasteredIds.size) saveMastered();
 }
 function saveMastered(){
-  localStorage.setItem(MASTER_KEY,JSON.stringify([...state.mastered]));
+  localStorage.setItem(MASTER_KEY,JSON.stringify({version:2,keys:[...state.mastered]}));
+
+  // Also mirror current IDs for backward compatibility if an older site version is temporarily redeployed.
+  if(cards.length){
+    const legacyIds=cards.filter(c=>state.mastered.has(masteryKeyFor(c))).map(c=>c.id);
+    localStorage.setItem(LEGACY_MASTER_KEY,JSON.stringify(legacyIds));
+    state.legacyMasteredIds=new Set(legacyIds);
+  }
 }
 function badgeHtml(cardOrQuestion){
   const type=cardOrQuestion.category || "Question";
@@ -89,7 +122,7 @@ function cardMatches(c){
   if(c.exam!==state.exam) return false;
   if(state.chapter!=="all" && c.chapter!==state.chapter) return false;
   if(state.category!=="all" && c.category!==state.category) return false;
-  if(state.onlyUnmastered && state.mastered.has(c.id)) return false;
+  if(state.onlyUnmastered && state.mastered.has(masteryKeyFor(c))) return false;
   if(state.search.trim()){
     const hay=(c.front+" "+c.back.replace(/<[^>]*>/g," ")).toLowerCase();
     if(!hay.includes(state.search.trim().toLowerCase())) return false;
@@ -123,9 +156,9 @@ function renderFlashcard(){
   $("sourceLine").textContent=c.source?`Source: ${c.source}`:"";
   $("cardPosition").textContent=`${state.cardIndex+1} / ${state.cardDeck.length}`;
   $("cardProgress").style.width=`${100*(state.cardIndex+1)/state.cardDeck.length}%`;
-  const masteredCount=state.cardDeck.filter(x=>state.mastered.has(x.id)).length;
+  const masteredCount=state.cardDeck.filter(x=>state.mastered.has(masteryKeyFor(x))).length;
   $("masteredSummary").textContent=`${masteredCount} mastered`;
-  const isMastered=state.mastered.has(c.id);
+  const isMastered=state.mastered.has(masteryKeyFor(c));
   $("masterBtn").textContent=isMastered?"✓ Mastered":"Mark mastered";
   $("masterBtn").classList.toggle("mastered",isMastered);
 }
@@ -143,7 +176,8 @@ function prevCard(){
 }
 function toggleMastered(){
   const c=state.cardDeck[state.cardIndex]; if(!c) return;
-  if(state.mastered.has(c.id)) state.mastered.delete(c.id); else state.mastered.add(c.id);
+  const key=masteryKeyFor(c);
+  if(state.mastered.has(key)) state.mastered.delete(key); else state.mastered.add(key);
   saveMastered();
   if(state.onlyUnmastered) rebuildCardDeck(false); else renderFlashcard();
 }
@@ -265,6 +299,7 @@ async function init(){
       fetch("data/test-questions.json",{cache:"no-store"}).then(r=>r.json())
     ]);
     manifest=m; cards=c; testQuestions=t;
+    migrateMastery();
   }catch(err){
     document.querySelector(".app-shell").innerHTML=`<div class="empty-state">Study data could not be loaded. On a deployed site this should load automatically.</div>`;
     return;

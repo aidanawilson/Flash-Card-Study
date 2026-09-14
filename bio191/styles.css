@@ -218,3 +218,30 @@ button:hover{border-color:var(--accent)}
   .test-topline{align-items:flex-start;flex-direction:column;gap:6px}
   .test-pool-note{text-align:left}
 }
+
+/* v5.3 — make the actual flashcard answer visually dominant on question-like cards. */
+.question-answer{
+  color:var(--accent);
+  font-size:clamp(21px,2.25vw,28px);
+  line-height:1.42;
+  font-weight:760;
+  letter-spacing:-.012em;
+}
+.question-answer b{
+  display:inline;
+  color:inherit!important;
+  font-size:inherit;
+  font-weight:850;
+  text-transform:none;
+  letter-spacing:inherit;
+  margin:0;
+}
+.question-answer b:first-child{
+  display:block;
+  color:var(--muted)!important;
+  font-size:12px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.065em;
+  margin:0 0 9px;
+}
